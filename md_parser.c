@@ -6,7 +6,7 @@
 #define MAX_LINE_LENGTH 1000
 
 bool parsingTable = false;
-int line_n = 0;
+bool codeBlockOpen = false;
 
 //UTILS
 
@@ -50,18 +50,28 @@ void parseTableLine(char *line, FILE *outputFile) {
 }
 
 void parseLine(char *line, FILE *outputFile) {
-    line_n++;
      if (parsingTable && strstr(line, "|") == NULL) {
-        printf("CloseTable %d\n", line_n);
         fprintf(outputFile, "</table>\n");
         parsingTable = false;
         return;
     }
+    if (strncmp(line, "```", 3) == 0) {
+        if(!codeBlockOpen) {
+            codeBlockOpen = true;
+            fprintf(outputFile, "<pre><code>\n");
+        } else {
+            codeBlockOpen = false;
+            fprintf(outputFile, "</pre></code>\n");
+        }
+        return;
+    }
+    
     if (line[0] == '#') {
         parseHeader(line, outputFile);
-    } else if (strstr(line, "|") != NULL) {
+        return;
+    } 
+    if (strstr(line, "|") != NULL) {
         if(!parsingTable) {
-            printf("OpenTable %d\n", line_n);
            fprintf(outputFile, "<table>\n");
            parsingTable = true;
         }
@@ -89,7 +99,7 @@ int main() {
     }
 
     char* style = "table {\n"
-                  "  width: 100%%;\n"
+                  "  width: 100%;\n"
                   "  border-collapse: collapse;\n"
                   "  font-family: Arial, sans-serif;\n"
                   "}\n"
